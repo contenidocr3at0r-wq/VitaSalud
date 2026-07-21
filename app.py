@@ -10,7 +10,12 @@ st.set_page_config(
     page_title="VitaSalud",
     page_icon="🌱",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
 )
 
 DEEPSEEK_API_KEY = "sk-16ba57fd0440454c848c268a55153fd1"
