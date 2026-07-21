@@ -16,14 +16,16 @@ st.set_page_config(
         'Report a bug': None,
         'About': None
     }
-    st.markdown("""
+)
+
+# Ocultar completamente el menú superior
+st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
-)
 
 DEEPSEEK_API_KEY = "sk-16ba57fd0440454c848c268a55153fd1"
 client = OpenAI(
