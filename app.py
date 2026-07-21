@@ -87,24 +87,47 @@ Alergias o alimentos que no come: {profile.get('alergias', 'Ninguna')}
 Limitaciones físicas: {profile.get('limitaciones', 'Ninguna')}
 """
 
-    system_prompt = f"""Eres VitaSalud, un coach de nutrición y ejercicio profesional, amable, motivador y proactivo. 
-Hablas en español latinoamericano de forma clara y cercana.
+    system_prompt = f"""Eres VitaSalud, un coach de nutrición y ejercicio profesional, amable, motivador, empático y muy proactivo. 
+Hablas en español latinoamericano de forma clara, cercana y natural (como un buen entrenador personal y nutricionista práctico).
 
-Tu objetivo es ayudar al usuario a mejorar sus hábitos de alimentación y ejercicio de forma segura y personalizada.
+Tu objetivo es ayudar al usuario a mejorar sus hábitos de alimentación y ejercicio de forma **segura, progresiva y realista**.
 
 INFORMACIÓN DEL USUARIO:
 {perfil_texto}
 
-REGLAS IMPORTANTES:
-1. Siempre ten en cuenta las alergias, restricciones y limitaciones físicas del usuario. Nunca recomiendes algo que las contradiga.
-2. Sé proactivo: haz preguntas útiles, ofrece opciones y guía al usuario.
-3. Cuando des recomendaciones de comida, sé concreto (porciones aproximadas, cómo prepararlo).
-4. Cuando el usuario diga qué ingredientes tiene, crea una receta práctica y saludable.
-5. Adapta las rutinas de ejercicio según si entrena en casa o gimnasio y según su experiencia.
-6. Si hay limitaciones físicas, prioriza seguridad y sugiere alternativas.
-7. No diagnostiques enfermedades ni sustituyas a un médico. Si es necesario, recomienda consultar a un profesional.
-8. Mantén las respuestas claras, organizadas y motivadoras. Usa listas y negritas cuando ayude a la lectura.
-9. Al final de tus respuestas importantes, ofrece un siguiente paso o pregunta.
+### REGLAS DE SEGURIDAD Y PROGRESIÓN (MUY IMPORTANTES):
+
+1. **Usuarios sedentarios o principiantes**:
+   - NUNCA empieces con sentadillas, planchas, flexiones o ejercicios de impacto el primer día.
+   - La primera semana debe ser MUY suave: caminata, movilidad articular, estiramientos suaves y ejercicios de activación (ej. marcha en el lugar, círculos de brazos, elevaciones de talones suaves).
+   - Explica por qué empezamos suave: "Tu cuerpo necesita adaptarse para evitar lesiones".
+   - Siempre pregunta cómo se sintió después de cada sesión para ajustar.
+
+2. **Recomendación médica**:
+   - Si el usuario es sedentario, tiene sobrepeso importante, limitaciones físicas o es principiante, recomienda de forma natural y no pesada consultar a un médico antes de empezar un programa de ejercicio.
+   - Ejemplo: "Antes de comenzar, te recomiendo que consultes con tu médico, especialmente si hace tiempo que no haces ejercicio. Es una medida de seguridad."
+   - No lo repitas en cada mensaje. Solo cuando sea relevante (inicio de plan de ejercicio, síntomas, etc.).
+
+3. **Nutrición**:
+   - Sé concreto con porciones y preparaciones.
+   - Si el usuario pide recetas, sé creativo y práctico.
+   - Ocasionalmente (no en cada respuesta) sugiere que una consulta con un nutricionista puede ayudar a personalizar aún más su plan.
+   - Nunca ignores alergias o restricciones alimentarias.
+
+4. **Recomendaciones de especialistas**:
+   - Si la conversación lo amerita (dolor, síntomas, condiciones específicas), puedes sugerir suavemente consultar a un médico general, nutricionista, fisioterapeuta o especialista.
+   - Sé eventual y no insistente. No lo conviertas en un discurso médico.
+
+5. **Estilo de comunicación**:
+   - Sé proactivo: haz preguntas útiles, ofrece opciones claras y guía el siguiente paso.
+   - Usa un tono motivador pero realista. Evita el "todo o nada".
+   - Organiza las respuestas con listas y negritas cuando sea útil.
+   - Al final de respuestas importantes, siempre ofrece un siguiente paso o pregunta.
+
+6. **Límites**:
+   - Nunca diagnostiques enfermedades.
+   - Nunca sustituyas el consejo de un profesional de la salud.
+   - Prioriza siempre la seguridad sobre resultados rápidos.
 
 Responde siempre como el coach de VitaSalud."""
 
@@ -310,17 +333,37 @@ else:
     # ========== REGISTRAR COMIDA ==========
     elif page == "Comida":
         st.markdown("### 🍽️ Registrar Comida")
+        st.caption("Registra lo que comiste para que el coach pueda darte mejores recomendaciones.")
 
         with st.form("meal_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
             with col1:
-                meal_type = st.selectbox("Tipo de comida", ["Desayuno", "Almuerzo", "Cena", "Snack / Merienda"])
+                meal_type = st.selectbox("Tipo de comida", ["Desayuno", "Almuerzo", "Cena", "Snack / Merienda", "Otro"])
                 meal_time = st.time_input("Hora aproximada", value=datetime.now().time())
             with col2:
                 meal_date = st.date_input("Fecha", value=date.today())
+                estimated_calories = st.number_input("Calorías aproximadas (opcional)", min_value=0, max_value=3000, value=0, step=50)
 
-            description = st.text_area("¿Qué comiste?", placeholder="Ej: 1 pechuga de pollo + ensalada + ½ taza de arroz")
-            feeling = st.select_slider("¿Cómo te sentiste después?", options=["Muy mal", "Mal", "Regular", "Bien", "Muy bien"], value="Bien")
+            description = st.text_area(
+                "¿Qué comiste?", 
+                placeholder="Ej: 1 pechuga de pollo a la plancha + ensalada de lechuga y tomate + ½ taza de arroz integral"
+            )
+
+            col3, col4 = st.columns(2)
+            with col3:
+                feeling = st.select_slider(
+                    "¿Cómo te sentiste después?", 
+                    options=["Muy mal", "Mal", "Regular", "Bien", "Muy bien"], 
+                    value="Bien"
+                )
+            with col4:
+                hunger_level = st.select_slider(
+                    "Nivel de hambre después de comer",
+                    options=["Muy lleno", "Satisfecho", "Normal", "Todavía con hambre", "Muy hambriento"],
+                    value="Satisfecho"
+                )
+
+            notes = st.text_area("Notas adicionales (opcional)", placeholder="Ej: Comí fuera, fue una comida social, me sentí hinchado...")
 
             if st.form_submit_button("Guardar comida", use_container_width=True):
                 if description and description.strip():
@@ -329,36 +372,56 @@ else:
                         "tipo": meal_type,
                         "hora": str(meal_time)[:5],
                         "descripcion": description.strip(),
-                        "sensacion": feeling
+                        "calorias": estimated_calories if estimated_calories > 0 else None,
+                        "sensacion": feeling,
+                        "hambre": hunger_level,
+                        "notas": notes.strip() if notes else ""
                     })
-                    st.success("¡Comida registrada!")
+                    st.success("¡Comida registrada correctamente!")
                 else:
                     st.warning("Por favor escribe qué comiste.")
 
         if st.session_state.meals:
             st.markdown("#### Últimas comidas registradas")
-            for meal in reversed(st.session_state.meals[-5:]):
+            for meal in reversed(st.session_state.meals[-8:]):
                 st.markdown(f"**{meal['fecha']} · {meal['tipo']}** ({meal['hora']})")
                 st.write(meal["descripcion"])
-                st.caption(f"Sensación: {meal['sensacion']}")
+                extra = f"Sensación: {meal['sensacion']} | Hambre: {meal.get('hambre', 'No registrada')}"
+                if meal.get("calorias"):
+                    extra += f" | ≈ {meal['calorias']} kcal"
+                st.caption(extra)
+                if meal.get("notas"):
+                    st.caption(f"Notas: {meal['notas']}")
                 st.divider()
 
     # ========== REGISTRAR EJERCICIO ==========
     elif page == "Ejercicio":
         st.markdown("### 💪 Registrar Ejercicio")
+        st.caption("Registra tu actividad para que el coach pueda ajustar tus rutinas de forma segura y progresiva.")
 
         with st.form("exercise_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
             with col1:
                 exercise_type = st.selectbox("Tipo de ejercicio", [
-                    "Caminata", "Rutina en casa", "Gimnasio", "Cardio", "Yoga / Estiramientos", "Otro"
+                    "Caminata", "Movilidad / Estiramientos", "Rutina en casa", "Gimnasio", 
+                    "Cardio suave", "Yoga", "Otro"
                 ])
-                duration = st.number_input("Duración (minutos)", min_value=5, max_value=180, value=30)
+                duration = st.number_input("Duración (minutos)", min_value=5, max_value=180, value=20)
             with col2:
                 exercise_date = st.date_input("Fecha", value=date.today(), key="ex_date")
-                intensity = st.select_slider("Intensidad", options=["Muy suave", "Suave", "Moderada", "Intensa", "Muy intensa"], value="Moderada")
+                intensity = st.select_slider(
+                    "Intensidad", 
+                    options=["Muy suave", "Suave", "Moderada", "Intensa", "Muy intensa"], 
+                    value="Suave"
+                )
 
-            notes = st.text_area("Notas (opcional)", placeholder="Ej: Hice la rutina de sentadillas y plancha")
+            how_felt = st.select_slider(
+                "¿Cómo te sentiste durante/después?",
+                options=["Muy mal / dolor", "Incómodo", "Regular", "Bien", "Excelente"],
+                value="Bien"
+            )
+
+            notes = st.text_area("Notas (opcional)", placeholder="Ej: Hice movilidad de cadera y caminata suave. Me sentí bien.")
 
             if st.form_submit_button("Guardar ejercicio", use_container_width=True):
                 st.session_state.exercises.append({
@@ -366,15 +429,16 @@ else:
                     "tipo": exercise_type,
                     "duracion": duration,
                     "intensidad": intensity,
+                    "sensacion": how_felt,
                     "notas": notes.strip() if notes else ""
                 })
                 st.success("¡Ejercicio registrado!")
 
         if st.session_state.exercises:
             st.markdown("#### Últimos ejercicios registrados")
-            for ex in reversed(st.session_state.exercises[-5:]):
+            for ex in reversed(st.session_state.exercises[-8:]):
                 st.markdown(f"**{ex['fecha']} · {ex['tipo']}** ({ex['duracion']} min)")
-                st.write(f"Intensidad: {ex['intensidad']}")
+                st.write(f"Intensidad: {ex['intensidad']} | Sensación: {ex.get('sensacion', 'No registrada')}")
                 if ex.get("notas"):
                     st.caption(ex["notas"])
                 st.divider()
