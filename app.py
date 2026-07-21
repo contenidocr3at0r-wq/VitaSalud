@@ -12,7 +12,7 @@ st.markdown("""
         footer {visibility: hidden;}
         header {visibility: hidden;}
     </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True
 )
 
 DEEPSEEK_API_KEY = "sk-16ba57fd0440454c848c268a55153fd1"
