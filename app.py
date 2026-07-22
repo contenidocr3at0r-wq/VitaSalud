@@ -18,7 +18,6 @@ st.set_page_config(
     }
 )
 
-# Ocultar menú
 st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
@@ -120,14 +119,11 @@ def update_db_schema():
         c.execute("ALTER TABLE profiles ADD COLUMN sexo TEXT")
         conn.commit()
     except:
-        pass  # La columna ya existe
+        pass
     conn.close()
 
 update_db_schema()
 
-# ======================
-# FUNCIONES DE AUTENTICACIÓN
-# ======================
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
@@ -234,8 +230,75 @@ def save_user_profile(user_id: int, profile: dict):
     conn.commit()
     conn.close()
 
+def load_user_meals(user_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT fecha, tipo, hora, descripcion, calorias, sensacion, hambre, notas FROM meals WHERE user_id = ? ORDER BY id DESC LIMIT 50", (user_id,))
+    rows = c.fetchall()
+    conn.close()
+    
+    return [{
+        "fecha": r[0], "tipo": r[1], "hora": r[2], "descripcion": r[3],
+        "calorias": r[4], "sensacion": r[5], "hambre": r[6], "notas": r[7]
+    } for r in rows]
+
+def save_meal(user_id: int, meal: dict):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO meals (user_id, fecha, tipo, hora, descripcion, calorias, sensacion, hambre, notas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        user_id, meal["fecha"], meal["tipo"], meal["hora"], meal["descripcion"],
+        meal.get("calorias"), meal["sensacion"], meal.get("hambre"), meal.get("notas", "")
+    ))
+    conn.commit()
+    conn.close()
+
+def load_user_exercises(user_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT fecha, tipo, duracion, intensidad, sensacion, notas FROM exercises WHERE user_id = ? ORDER BY id DESC LIMIT 50", (user_id,))
+    rows = c.fetchall()
+    conn.close()
+    
+    return [{
+        "fecha": r[0], "tipo": r[1], "duracion": r[2], "intensidad": r[3],
+        "sensacion": r[4], "notas": r[5]
+    } for r in rows]
+
+def save_exercise(user_id: int, exercise: dict):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO exercises (user_id, fecha, tipo, duracion, intensidad, sensacion, notas)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        user_id, exercise["fecha"], exercise["tipo"], exercise["duracion"],
+        exercise["intensidad"], exercise.get("sensacion"), exercise.get("notas", "")
+    ))
+    conn.commit()
+    conn.close()
+
+def load_weight_log(user_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT fecha, peso FROM weight_log WHERE user_id = ? ORDER BY id", (user_id,))
+    rows = c.fetchall()
+    conn.close()
+    return [{"fecha": r[0], "peso": r[1]} for r in rows]
+
+def save_weight(user_id: int, peso: float, fecha: str = None):
+    if fecha is None:
+        fecha = str(date.today())
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT INTO weight_log (user_id, fecha, peso) VALUES (?, ?, ?)", (user_id, fecha, peso))
+    conn.commit()
+    conn.close()
+
 # ======================
-# RESTO DEL CÓDIGO (login, chat, etc.)
+# ESTADO DE LA SESIÓN
 # ======================
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
@@ -257,67 +320,6 @@ if "last_recipe" not in st.session_state:
     st.session_state.last_recipe = None
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
-
-def get_coach_response(user_input: str, profile: dict, chat_history: list) -> str:
-    perfil_texto = f"""
-Nombre: {profile.get('nombre', 'Usuario')}
-Sexo: {profile.get('sexo', 'No especificado')}
-Edad: {profile.get('edad', 'No especificada')}
-Peso: {profile.get('peso', 'No especificado')} kg
-Altura: {profile.get('altura', 'No especificada')} cm
-Objetivo: {profile.get('objetivo', 'Mejorar hábitos')}
-Nivel de actividad: {profile.get('nivel_actividad', 'No especificado')}
-Experiencia con ejercicio: {profile.get('experiencia', 'Principiante')}
-Prefiere entrenar en: {profile.get('lugar_entrenamiento', 'Casa')}
-Condiciones de salud: {', '.join(profile.get('restricciones', ['Ninguna']))}
-Alergias o alimentos que no come: {profile.get('alergias', 'Ninguna')}
-Limitaciones físicas: {profile.get('limitaciones', 'Ninguna')}
-"""
-
-    system_prompt = f"""Eres VitaSalud, un coach de nutrición y ejercicio profesional, amable, motivador, empático y muy proactivo. 
-Hablas en español latinoamericano de forma clara, cercana y natural.
-
-Tu objetivo es ayudar al usuario a mejorar sus hábitos de alimentación y ejercicio de forma **segura, progresiva y realista**.
-
-INFORMACIÓN DEL USUARIO:
-{perfil_texto}
-
-### REGLAS DE SEGURIDAD Y PROGRESIÓN (MUY IMPORTANTES):
-
-1. **Usuarios sedentarios o principiantes**:
-   - NUNCA empieces con sentadillas, planchas, flexiones o ejercicios de impacto el primer día.
-   - La primera semana debe ser MUY suave: caminata, movilidad articular, estiramientos suaves y ejercicios de activación.
-   - Siempre pregunta cómo se sintió después de cada sesión para ajustar.
-
-2. **Recomendación médica**:
-   - Recomienda consultar a un médico cuando sea relevante (sedentarismo, limitaciones, etc.).
-
-3. **Nutrición y ejercicio**:
-   - Adapta recomendaciones según sexo, edad y condiciones.
-   - Sé concreto y práctico.
-
-Responde siempre como el coach de VitaSalud."""
-
-    messages_for_api = [{"role": "system", "content": system_prompt}]
-    
-    for msg in chat_history[-10:]:
-        messages_for_api.append({
-            "role": msg["role"],
-            "content": msg["content"]
-        })
-    
-    messages_for_api.append({"role": "user", "content": user_input})
-
-    try:
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=messages_for_api,
-            temperature=0.7,
-            max_tokens=1000
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Lo siento, tuve un problema al conectar con la IA. Error: {str(e)}\n\nPor favor intenta de nuevo en un momento."
 
 # ======================
 # PANTALLA DE LOGIN / REGISTRO
@@ -505,8 +507,207 @@ with st.sidebar:
                 del st.session_state[key]
             st.rerun()
 
-# El resto del código (chat, comida, ejercicio, progreso) se mantiene igual
-# (puedes copiarlo del código anterior si es necesario)
+# ======================
+# CONTENIDO PRINCIPAL
+# ======================
+if st.session_state.profile is None:
+    st.markdown('<div class="main-header">🌱 VitaSalud</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Tu asistente personal de nutrición y ejercicio</div>', unsafe_allow_html=True)
+    st.info("👈 Completa tu perfil en la barra lateral para comenzar.")
+else:
+    profile = st.session_state.profile
+    page = st.session_state.current_page
+
+    if page == "Chat":
+        st.markdown("### 💬 Chat con tu Coach")
+        st.caption(f"Hola {profile['nombre']}, ¿en qué te ayudo hoy?")
+
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        if prompt := st.chat_input("Escribe tu mensaje aquí..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Pensando..."):
+                    response = get_coach_response(prompt, profile, st.session_state.messages)
+                st.markdown(response)
+
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+            food_keywords = ["comida", "comer", "almuerzo", "cena", "desayuno", "receta", "ingredientes", "dieta", "alimentación", "menu", "menú"]
+            if any(w in prompt.lower() for w in food_keywords) or any(w in response.lower() for w in ["receta", "desayuno", "almuerzo", "cena", "ingredientes"]):
+                st.session_state.last_recipe = response
+
+            st.rerun()
+
+        if st.session_state.last_recipe:
+            st.divider()
+            st.download_button(
+                label="📄 Descargar última receta / recomendación",
+                data=st.session_state.last_recipe,
+                file_name=f"receta_vitasalud_{date.today()}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+
+    elif page == "Comida":
+        st.markdown("### 🍽️ Registrar Comida")
+        st.caption("Registra lo que comiste para que el coach pueda darte mejores recomendaciones.")
+
+        with st.form("meal_form", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                meal_type = st.selectbox("Tipo de comida", ["Desayuno", "Almuerzo", "Cena", "Snack / Merienda", "Otro"])
+                meal_time = st.time_input("Hora aproximada", value=datetime.now().time())
+            with col2:
+                meal_date = st.date_input("Fecha", value=date.today())
+                estimated_calories = st.number_input("Calorías aproximadas (opcional)", min_value=0, max_value=3000, value=0, step=50)
+
+            description = st.text_area("¿Qué comiste?", placeholder="Ej: 1 pechuga de pollo + ensalada + ½ taza de arroz")
+
+            col3, col4 = st.columns(2)
+            with col3:
+                feeling = st.select_slider("¿Cómo te sentiste después?", options=["Muy mal", "Mal", "Regular", "Bien", "Muy bien"], value="Bien")
+            with col4:
+                hunger_level = st.select_slider("Nivel de hambre después de comer", options=["Muy lleno", "Satisfecho", "Normal", "Todavía con hambre", "Muy hambriento"], value="Satisfecho")
+
+            notes = st.text_area("Notas adicionales (opcional)", placeholder="Ej: Comí fuera, me sentí hinchado...")
+
+            if st.form_submit_button("Guardar comida", use_container_width=True):
+                if description and description.strip():
+                    meal = {
+                        "fecha": str(meal_date),
+                        "tipo": meal_type,
+                        "hora": str(meal_time)[:5],
+                        "descripcion": description.strip(),
+                        "calorias": estimated_calories if estimated_calories > 0 else None,
+                        "sensacion": feeling,
+                        "hambre": hunger_level,
+                        "notas": notes.strip() if notes else ""
+                    }
+                    save_meal(user_id, meal)
+                    st.session_state.meals = load_user_meals(user_id)
+                    st.success("¡Comida registrada correctamente!")
+                else:
+                    st.warning("Por favor escribe qué comiste.")
+
+        if st.session_state.meals:
+            st.markdown("#### Últimas comidas registradas")
+            for meal in st.session_state.meals[:8]:
+                st.markdown(f"**{meal['fecha']} · {meal['tipo']}** ({meal['hora']})")
+                st.write(meal["descripcion"])
+                extra = f"Sensación: {meal['sensacion']} | Hambre: {meal.get('hambre', 'No registrada')}"
+                if meal.get("calorias"):
+                    extra += f" | ≈ {meal['calorias']} kcal"
+                st.caption(extra)
+                if meal.get("notas"):
+                    st.caption(f"Notas: {meal['notas']}")
+                st.divider()
+
+    elif page == "Ejercicio":
+        st.markdown("### 💪 Registrar Ejercicio")
+        st.caption("Registra tu actividad para que el coach pueda ajustar tus rutinas de forma segura y progresiva.")
+
+        with st.form("exercise_form", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                exercise_type = st.selectbox("Tipo de ejercicio", [
+                    "Caminata", "Movilidad / Estiramientos", "Rutina en casa", "Gimnasio",
+                    "Cardio suave", "Yoga", "Otro"
+                ])
+                duration = st.number_input("Duración (minutos)", min_value=5, max_value=180, value=20)
+            with col2:
+                exercise_date = st.date_input("Fecha", value=date.today(), key="ex_date")
+                intensity = st.select_slider("Intensidad", options=["Muy suave", "Suave", "Moderada", "Intensa", "Muy intensa"], value="Suave")
+
+            how_felt = st.select_slider("¿Cómo te sentiste durante/después?", options=["Muy mal / dolor", "Incómodo", "Regular", "Bien", "Excelente"], value="Bien")
+            notes = st.text_area("Notas (opcional)", placeholder="Ej: Hice movilidad de cadera y caminata suave.")
+
+            if st.form_submit_button("Guardar ejercicio", use_container_width=True):
+                exercise = {
+                    "fecha": str(exercise_date),
+                    "tipo": exercise_type,
+                    "duracion": duration,
+                    "intensidad": intensity,
+                    "sensacion": how_felt,
+                    "notas": notes.strip() if notes else ""
+                }
+                save_exercise(user_id, exercise)
+                st.session_state.exercises = load_user_exercises(user_id)
+                st.success("¡Ejercicio registrado!")
+
+        if st.session_state.exercises:
+            st.markdown("#### Últimos ejercicios registrados")
+            for ex in st.session_state.exercises[:8]:
+                st.markdown(f"**{ex['fecha']} · {ex['tipo']}** ({ex['duracion']} min)")
+                st.write(f"Intensidad: {ex['intensidad']} | Sensación: {ex.get('sensacion', 'No registrada')}")
+                if ex.get("notas"):
+                    st.caption(ex["notas"])
+                st.divider()
+
+    elif page == "Progreso":
+        st.markdown("### 📊 Mi Progreso")
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Peso actual", f"{profile['peso']} kg")
+        with col2:
+            st.metric("Comidas registradas", len(st.session_state.meals))
+        with col3:
+            st.metric("Ejercicios registrados", len(st.session_state.exercises))
+        with col4:
+            try:
+                inicio = datetime.strptime(profile["fecha_inicio"], "%Y-%m-%d").date()
+                dias = (date.today() - inicio).days
+                st.metric("Días en VitaSalud", max(dias, 0))
+            except Exception:
+                st.metric("Días en VitaSalud", 0)
+
+        st.divider()
+
+        with st.expander("➕ Registrar nuevo peso"):
+            new_weight = st.number_input("Peso (kg)", min_value=40.0, max_value=250.0, value=float(profile["peso"]), step=0.1)
+            if st.button("Guardar peso"):
+                save_weight(user_id, new_weight)
+                st.session_state.profile["peso"] = new_weight
+                save_user_profile(user_id, st.session_state.profile)
+                st.session_state.weight_log = load_weight_log(user_id)
+                st.success("Peso actualizado")
+                st.rerun()
+
+        if len(st.session_state.weight_log) > 1:
+            st.markdown("#### Evolución del peso")
+            try:
+                df_weight = pd.DataFrame(st.session_state.weight_log)
+                df_weight["fecha"] = pd.to_datetime(df_weight["fecha"])
+                st.line_chart(df_weight.set_index("fecha")["peso"])
+            except Exception:
+                st.info("No se pudo generar el gráfico todavía.")
+        else:
+            st.info("Registra tu peso al menos dos veces para ver la evolución.")
+
+        st.divider()
+        st.markdown("#### Resumen de actividad reciente")
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.write("**Últimas comidas:**")
+            if st.session_state.meals:
+                for m in st.session_state.meals[:5]:
+                    st.caption(f"{m['fecha']} · {m['tipo']}: {m['descripcion'][:45]}...")
+            else:
+                st.caption("Aún no hay comidas registradas.")
+        with col_b:
+            st.write("**Últimos ejercicios:**")
+            if st.session_state.exercises:
+                for e in st.session_state.exercises[:5]:
+                    st.caption(f"{e['fecha']} · {e['tipo']} ({e['duracion']} min)")
+            else:
+                st.caption("Aún no hay ejercicios registrados.")
 
 st.divider()
 st.caption("VitaSalud · Versión MVP · Conectado a DeepSeek AI")
