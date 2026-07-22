@@ -27,7 +27,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-DEEPSEEK_API_KEY = "sk-16ba57fd0440454c848c268a55153fd1"
+DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
 client = OpenAI(
     api_key=DEEPSEEK_API_KEY,
     base_url="https://api.deepseek.com"
