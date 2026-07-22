@@ -162,6 +162,7 @@ def get_user_profile(user_id: int):
     return {
         "nombre": row[1],
         "edad": row[2],
+        "sexo": row[13]
         "peso": row[3],
         "altura": row[4],
         "objetivo": row[5],
