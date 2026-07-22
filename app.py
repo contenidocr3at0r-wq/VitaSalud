@@ -37,7 +37,6 @@ DB_PATH = "vitasalud.db"
 
 def init_db():
        conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
 
 def update_db_schema():
     conn = sqlite3.connect(DB_PATH)
