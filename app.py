@@ -410,7 +410,7 @@ with st.sidebar:
 
         with st.form("profile_form"):
             nombre = st.text_input("¿Cómo te llamas?", placeholder="Ej: Carlos")
-            sexo = st.selectbox("Sexo", ["Masculino", "Femenino", "Otro"])
+            sexo = st.selectbox("Sexo", ["Masculino", "Femenino"])
             edad = st.number_input("Edad", min_value=15, max_value=90, value=35)
             peso = st.number_input("Peso actual (kg)", min_value=40.0, max_value=250.0, value=85.0, step=0.1)
             altura = st.number_input("Altura (cm)", min_value=140, max_value=220, value=170)
