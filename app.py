@@ -36,6 +36,18 @@ client = OpenAI(
 DB_PATH = "vitasalud.db"
 
 def init_db():
+    def update_db_schema():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    try:
+        c.execute("ALTER TABLE profiles ADD COLUMN sexo TEXT")
+        conn.commit()
+    except:
+        pass  # La columna ya existe
+    conn.close()
+
+update_db_schema()
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
