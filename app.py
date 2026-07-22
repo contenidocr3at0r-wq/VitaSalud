@@ -52,6 +52,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS profiles (
             user_id INTEGER PRIMARY KEY,
             nombre TEXT,
+            sexo = st.selectbox("Sexo", ["Masculino", "Femenino", "Otro"])
             edad INTEGER,
             peso REAL,
             altura INTEGER,
@@ -183,7 +184,6 @@ def save_user_profile(user_id: int, profile: dict):
     
     data = (
         profile.get("nombre"),
-        sexo = st.selectbox("Sexo", ["Masculino", "Femenino", "Otro"])
         profile.get("edad"),
         profile.get("peso"),
         profile.get("altura"),
