@@ -183,7 +183,7 @@ def save_user_profile(user_id: int, profile: dict):
     
     data = (
         profile.get("nombre"),
-        sexo = st.selectbox("Sexo", ["Masculino" or "Femenino"])
+        sexo = st.selectbox("Sexo", ["Masculino", "Femenino", "Otro"])
         profile.get("edad"),
         profile.get("peso"),
         profile.get("altura"),
