@@ -36,9 +36,9 @@ client = OpenAI(
 DB_PATH = "vitasalud.db"
 
 def init_db():
-       conn = sqlite3.connect(DB_PATH)
-       c = conn.cursor()
-
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +52,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS profiles (
             user_id INTEGER PRIMARY KEY,
             nombre TEXT,
-            sexo = st.selectbox("Sexo", ["Masculino", "Femenino", "Otro"])
+            sexo TEXT,
             edad INTEGER,
             peso REAL,
             altura INTEGER,
