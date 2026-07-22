@@ -36,7 +36,10 @@ client = OpenAI(
 DB_PATH = "vitasalud.db"
 
 def init_db():
-    def update_db_schema():
+       conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+def update_db_schema():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     try:
@@ -48,9 +51,6 @@ def init_db():
 
 update_db_schema()
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
