@@ -117,8 +117,6 @@ def update_db_schema():
     try:
         c.execute("ALTER TABLE profiles ADD COLUMN sexo TEXT")
         conn.commit()
-    except:
-        pass  # La columna ya existe
     conn.close()
 
 update_db_schema()
