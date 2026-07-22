@@ -37,18 +37,7 @@ DB_PATH = "vitasalud.db"
 
 def init_db():
        conn = sqlite3.connect(DB_PATH)
-
-def update_db_schema():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    try:
-        c.execute("ALTER TABLE profiles ADD COLUMN sexo TEXT")
-        conn.commit()
-    except:
-        pass  # La columna ya existe
-    conn.close()
-
-update_db_schema()
+       c = conn.cursor()
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -121,6 +110,18 @@ update_db_schema()
     
     conn.commit()
     conn.close()
+
+def update_db_schema():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    try:
+        c.execute("ALTER TABLE profiles ADD COLUMN sexo TEXT")
+        conn.commit()
+    except:
+        pass  # La columna ya existe
+    conn.close()
+
+update_db_schema()
 
 init_db()
 
