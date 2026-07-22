@@ -161,7 +161,7 @@ def get_user_profile(user_id: int):
     
     return {
         "nombre": row[1],
-        sexo = st.selectbox("Sexo", ["Masculino", "Femenino"])
+        "Sexo", ["Masculino", "Femenino"])
         "edad": row[2],
         "peso": row[3],
         "altura": row[4],
