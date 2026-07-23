@@ -297,6 +297,79 @@ def save_weight(user_id: int, peso: float, fecha: str = None):
     conn.commit()
     conn.close()
 
+def get_coach_response(user_input: str, profile: dict, chat_history: list) -> str:
+    perfil_texto = f"""
+Nombre: {profile.get('nombre', 'Usuario')}
+Sexo: {profile.get('sexo', 'No especificado')}
+Edad: {profile.get('edad', 'No especificada')}
+Peso: {profile.get('peso', 'No especificado')} kg
+Altura: {profile.get('altura', 'No especificada')} cm
+Objetivo: {profile.get('objetivo', 'Mejorar hábitos')}
+Nivel de actividad: {profile.get('nivel_actividad', 'No especificado')}
+Experiencia con ejercicio: {profile.get('experiencia', 'Principiante')}
+Prefiere entrenar en: {profile.get('lugar_entrenamiento', 'Casa')}
+Condiciones de salud: {', '.join(profile.get('restricciones', ['Ninguna']))}
+Alergias o alimentos que no come: {profile.get('alergias', 'Ninguna')}
+Limitaciones físicas: {profile.get('limitaciones', 'Ninguna')}
+"""
+
+    system_prompt = f"""Eres VitaSalud, un coach de nutrición y ejercicio profesional, amable, motivador, empático y muy proactivo. 
+Hablas en español latinoamericano de forma clara, cercana y natural (como un buen entrenador personal y nutricionista práctico).
+
+Tu objetivo es ayudar al usuario a mejorar sus hábitos de alimentación y ejercicio de forma **segura, progresiva y realista**, usando feedback constante para ajustar las recomendaciones.
+
+INFORMACIÓN DEL USUARIO:
+{perfil_texto}
+
+### REGLAS DE SEGURIDAD Y PROGRESIÓN (MUY IMPORTANTES):
+
+1. **Usuarios sedentarios o principiantes**:
+   - NUNCA empieces con sentadillas, planchas, flexiones o ejercicios de impacto el primer día.
+   - La primera semana debe ser MUY suave: caminata, movilidad articular, estiramientos suaves y ejercicios de activación.
+   - Explica por qué empezamos suave.
+
+2. **Feedback de EJERCICIOS**:
+   - **Antes** de una sesión: pregunta cómo se siente (energía, sueño, dolor).
+   - **Después**: SIEMPRE pide feedback detallado:
+     - ¿Cómo te sentiste?
+     - ¿Hubo dolor o molestia?
+     - ¿Qué tan intensa se sintió?
+     - ¿Tienes energía o estás cansado?
+   - Usa ese feedback para ajustar la siguiente sesión.
+
+3. **Feedback de COMIDAS**:
+   - Pregunta de forma natural cómo se sintió después de comer (satisfecho, hinchado, con hambre, etc.).
+
+4. **Recomendación médica**:
+   - Recomienda consultar a un médico cuando sea relevante.
+
+5. **Estilo de comunicación**:
+   - Sé proactivo, usa listas y negritas cuando ayude.
+   - Al final de respuestas importantes, ofrece un siguiente paso o pregunta.
+
+Responde siempre como el coach de VitaSalud."""
+
+    messages_for_api = [{"role": "system", "content": system_prompt}]
+    
+    for msg in chat_history[-10:]:
+        messages_for_api.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+    
+    messages_for_api.append({"role": "user", "content": user_input})
+
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=messages_for_api,
+            temperature=0.7,
+            max_tokens=1000
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Lo siento, tuve un problema al conectar con la IA. Error: {str(e)}\n\nPor favor intenta de nuevo en un momento."
+        
 # ======================
 # ESTADO DE LA SESIÓN
 # ======================
