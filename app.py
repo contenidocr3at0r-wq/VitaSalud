@@ -783,5 +783,5 @@ else:
                 st.caption("Aún no hay ejercicios registrados.")
 
 st.divider()
-st.caption("VitaSalud · Versión MVP · Conectado a DeepSeek AI")
+st.caption("VitaSalud · Versión MVP ·")
 st.caption("⚠️ Esta herramienta no sustituye el consejo de un médico o nutricionista profesional.")
