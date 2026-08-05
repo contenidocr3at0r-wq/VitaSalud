@@ -1286,7 +1286,7 @@ elif page == "Progreso":
         st.info(t("weight_hint"))
 
 st.divider()
-st.caption("VitaSalud · Versión MVP · DeepSeek AI + Supabase + wger")
+st.caption("VitaSalud · Versión MVP ·")
 st.caption(
     "⚠️ Esta herramienta no sustituye el consejo de un médico o nutricionista profesional. Solo para mayores de 18 años."
 )
