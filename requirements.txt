@@ -1,7 +1,7 @@
-streamlit
-pandas
-openai
-bcrypt
-supabase
-requests
-beautifulsoup4
+streamlit==1.42.0
+pandas==2.2.3
+openai==1.59.6
+bcrypt==4.2.1
+supabase==2.11.0
+requests==2.32.3
+beautifulsoup4==4.12.3
